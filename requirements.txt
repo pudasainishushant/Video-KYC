@@ -1,0 +1,14 @@
+av==8.0.3
+keras_facenet==0.3.2
+matplotlib
+mediapipe
+mtcnn==0.1.1
+nepali_roman==1.1
+nltk==3.6.5
+numpy
+opencv_python==4.5.4.60
+pytesseract==0.3.8
+scipy
+tensorflow
+streamlit==1.2.0
+streamlit_webrtc==0.31.5
