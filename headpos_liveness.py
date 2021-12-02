@@ -2,7 +2,10 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import streamlit as st
 
+from blink_liveness import check_blink
+from passive_liveness.face_detect import liveness_detector
 
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -10,15 +13,19 @@ face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_con
 head_pos_list = []
 turned_left = False
 turned_right = False
-verification_completed = False
+headpos_verification_completed = False
+blinked = False
+passive_liveness_completed = False
+
 
 def get_head_pos(image):
     # Flip the image horizontally for a later selfie-view display
     # Also convert the color space from BGR to RGB
     
-    global head_pos_list, turned_left, turned_right, verification_completed
+    global head_pos_list, turned_left, turned_right, headpos_verification_completed, blinked, passive_liveness_completed
 
     image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+    image_copy = image.copy()
     image.flags.writeable = False
     results = face_mesh.process(image)
     image.flags.writeable = True
@@ -78,25 +85,43 @@ def get_head_pos(image):
 
             # See where the user's head tilting
             if y < -17:
-                text = "Looking Left"
+                pos = "Looking Left"
                 turned_left = True
             elif y > 17:
-                text = "Looking Right"
+                pos = "Looking Right"
                 turned_right = True
             elif x < -17:
-                text = "Looking Down"
+                pos = "Looking Down"
             else:
-                text = "Forward"
+                pos = "Forward"
 
-            head_pos_list.append(text)
+#            head_pos_list.append(pos)
+
+#            print(turned_left, turned_right)
 
             if turned_left and turned_right:
-                text = 'Liveness Verification Completed'
-                verification_completed = True
+                text = 'Blink Few Times'
+                try:
+                    image, status = check_blink(image)
+                except:
+                    image = image
+                    status = False
+                if status == True or blinked:
+                    blinked = True
+ #                   print(blinked, status)
+                    text = 'Taking Picture for Passive Liveness'
+                    passive_liveness_result = liveness_detector(image_copy)
+#                    print(passive_liveness_result)
+                    if passive_liveness_result:
+                        text = 'Liveness Verification Completed'
+                        passive_liveness_completed = True
+                headpos_verification_completed = True
             elif not turned_left:
                 text = 'Turn Left'
             elif not turned_right:
                 text = 'Turn Right'
+            else:
+                text = 'Error'
 
             nose_3d_projection, jacobian = cv2.projectPoints(nose_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
 

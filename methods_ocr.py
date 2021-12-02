@@ -24,6 +24,10 @@ def get_info_front(image):
     return text['text']
 
 
+def get_similarity_score(a, b):
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
 def get_citizenship_number(result):
   lines=[]
   for line in result.split('\n'):
@@ -82,7 +86,7 @@ def get_dob(date):
         date+=str(numeric)+'/'
       except:
         pass
-    if len(date)>8:
+    if len(date)>8 and data.count('/') == 2:
       return date[:-1]
     else:
       return None
@@ -120,8 +124,10 @@ def get_name_both(data_nep):
     full_name_nep = str_list_nep[ix3+1:ix4]
     full_name_nep = ' '.join(full_name_nep)
     full_name = nr.romanize_text(full_name_nep).title()
- 
-    return full_name, full_name_nep
+    if len(full_name_nep)<30:
+      return full_name, full_name_nep
+    else:
+      return None, None
   except:
     return None, None
 
@@ -209,8 +215,9 @@ def most_frequent(List):
     return None
 
 
-
-def get_accurate_info(image, start=100, stop=150, step_size=3, just_citizenship_num = True):
+@st.experimental_memo
+def get_accurate_info(image, start=100, stop=150, step_size=3, json=False):
+ # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
   citizenship_number_list = []
   name_list = []
   name_nep_list = []
@@ -253,16 +260,24 @@ def get_accurate_info(image, start=100, stop=150, step_size=3, just_citizenship_
   accurate_birth_ward = most_frequent(birth_ward_list)
   accurate_permanent_ward = most_frequent(permanent_ward_list)
   
-  if not just_citizenship_num:
+  if json:
     return json.dumps({'Citizenship number': accurate_citizenship_number,
                        'Name': accurate_name, 'Name (Nepali)': accurate_name_nep,'Gender': accurate_gender, 
                        'Birth Date': accurate_dob, 'Birth Place': accurate_birth_district,
                        'Permanent Address': accurate_permanent_district,
                        'Birth Ward Number': accurate_birth_ward, 'Permanent Ward Number': accurate_permanent_ward}, ensure_ascii=False)
   else:
-    return accurate_citizenship_number
+    try:
+      accurate_birth_district = nr.romanize_text(accurate_birth_district)
+    except:
+      pass
+    try:
+      accurate_permanent_district = nr.romanize_text(accurate_permanent_district)
+    except:
+      pass
+    return accurate_citizenship_number, accurate_name, accurate_gender, accurate_dob, accurate_birth_district, accurate_permanent_district, accurate_birth_ward, accurate_permanent_ward
 
 
 if __name__ == '__main__':
-  image = cv2.imread(r"C:\Users\aarya\Downloads\aaryan_front.jpg")
+  image = cv2.imread(r"C:\Users\aarya\Downloads\b_front.jpg")
   print(get_accurate_info(image))

@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase,ClientSettings
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, ClientSettings
 import cv2
 import av
 import numpy as np
@@ -7,9 +7,14 @@ from mtcnn import MTCNN
 from keras_facenet import FaceNet
 import datetime
 
+import sys
+import os
+sys.path.insert(0, os.getcwd() + '/passive_liveness')
+
 from methods import *
-from methods_ocr import get_accurate_info
-from headpos_liveness import get_head_pos, verification_completed
+from methods_ocr import get_accurate_info, get_similarity_score
+from blink_liveness import check_blink, blink_verification_completed
+from headpos_liveness import get_head_pos, headpos_verification_completed, passive_liveness_completed
 
 face_match = False
 
@@ -58,11 +63,6 @@ if page == 'Face Match Verification':
 		st.image(cv2.cvtColor(face_doc, cv2.COLOR_BGR2RGB))
 
 	if not face_match:
-		# ctx = webrtc_streamer(ClientSettings(
-        #     rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-        #     media_stream_constraints={"video": True, "audio": False},
-        # ),key='example', video_processor_factory=VideoProcessor)
-
 		ctx = webrtc_streamer(
 			client_settings=ClientSettings(
 				rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
@@ -72,12 +72,14 @@ if page == 'Face Match Verification':
 			key="example",
 		)
 
+
+
 	if not ctx.video_transformer or face_match:
 		if not face_match:
-			st.write('Please click the START button to start the VKYC.')
+			st.write('Please click the START button to start the Face Match Verification.')
 
 	else:
-		if st.button('Take Picture'):
+		if st.button('Take Picture for Facematch Verification'):
 			image = ctx.video_transformer.current_frame
 			face = get_face(image)
 			face_embeddings = get_embeddings(face)
@@ -101,25 +103,41 @@ elif page=='OCR Verification':
 		st.image(cv2.cvtColor(citizenship_front, cv2.COLOR_BGR2RGB))
 		st.image(cv2.cvtColor(citizenship_back, cv2.COLOR_BGR2RGB))
 	except:
-		pass
+		st.stop()
+	
 	with st.form('User Inputs'):
-		
-		full_name = st.text_input('Full Name', max_chars=30)
-		citizenship_number = st.text_input('Citizenship number (without symbols)', max_chars=15)
-		temporary_address = st.text_input('Temporary Address', max_chars=30)
-		permanent_address = st.text_input('Permanent Address', max_chars=30)
+
+		p_citizenship_number, p_name, p_gender, p_dob, p_birth_district, p_permanent_district, p_birth_ward, p_permanent_ward = get_accurate_info(citizenship_front)
+		print(p_citizenship_number, p_name, p_gender, p_dob, p_birth_district, p_permanent_district, p_birth_ward, p_permanent_ward)
+
+		if  len(str(p_citizenship_number)) < 8:
+			st.write('Please upload clear images of documents and retry')
+			st.form_submit_button()
+			st.stop()
+
+
+		full_name = st.text_input('Full Name', max_chars=30, placeholder=p_name)
+		citizenship_number = st.text_input('Citizenship number (without symbols)', max_chars=15, placeholder=p_citizenship_number)
+		birth_address = st.text_input('Temporary Address', max_chars=30, placeholder=p_birth_district)
+		permanent_address = st.text_input('Permanent Address', max_chars=30, placeholder=p_permanent_district)
+		try:
+			st.write('Suggestion: '+ p_dob)
+		except:
+			pass
 		dob = st.date_input('Enter your DOB', min_value=datetime.date(1900,1,1))
-		phone_no = st.text_input('Phone Number', max_chars=15)
-		email_address = st.text_input('Email Address', max_chars=30)
+		phone_no = st.text_input('Phone Number', max_chars=15, placeholder=None)
+		email_address = st.text_input('Email Address', max_chars=30, placeholder=None)
+		try:
+			st.write('Suggestion: '+ p_gender.capitalize())
+		except:
+			pass
 		gender = st.selectbox('Gender', options=['Male', 'Female', 'Other'])
 		st.form_submit_button()
-		
+	
 		if full_name:
-			st.write('Processing your documents')
-			accurate_info = get_accurate_info(citizenship_front)
-			print(accurate_info)
-
-			if citizenship_number == str(accurate_info):
+			
+			
+			if get_similarity_score(str(citizenship_number), str(p_citizenship_number)) > 0.8:
 				st.subheader('OCR Verification Successful')
 				st.subheader('Head to Next Page: Facematch Verification')
 			else:
@@ -128,7 +146,7 @@ elif page=='OCR Verification':
 
 
 elif page=='Liveness Verification':
-	# ctx = webrtc_streamer(key='example', video_processor_factory=VideoProcessor)
+	
 	ctx = webrtc_streamer(
 		client_settings=ClientSettings(
 			rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
@@ -138,31 +156,7 @@ elif page=='Liveness Verification':
 		key="example",
 	)
 
-	if verification_completed:
+	if headpos_verification_completed and blink_verification_completed and passive_liveness_completed:
 		st.subheader('Liveness Verification Completed')
 		st.title('All Verification Steps Completed, You Are A Verified User Now')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if ctx.video_transformer:
-#	ctx.video_transformer.threshold1 = st.slider('Threshold1', 0,1000, 100)
-#	ctx.video_transformer.threshold2 = st.slider('Threshold2', 0, 1000, 200)
-
 

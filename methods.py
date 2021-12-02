@@ -124,7 +124,7 @@ def get_info(image):
 
 
 if __name__ == '__main__':
-	image_path = r"C:\Users\aarya\Downloads\aaryan_back.jpg"
+	image_path = r"C:\Users\aarya\Downloads\ct-back.jpg"
 	image = cv2.imread(image_path)
 #	embeddings = get_embeddings(image)
 #	print(len(embeddings))
