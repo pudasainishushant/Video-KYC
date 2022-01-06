@@ -316,21 +316,21 @@ def get_info_back(image):
     
     print(cnText)
     c_number, gender = get_citizenship_number(cnText)
-    info['Citizenship Number'] = c_number
+    info['CitizenshipNumber'] = c_number
     info['Gender'] = gender
     
     full_name = get_full_name(cnText)
     info['Name'] = full_name
 
     date_of_birth = get_DOB(cnText)
-    info['dob'] = date_of_birth
+    info['DateOfBirth'] = date_of_birth
 
     birth_place, permanent_adrr = get_address(cnText)
-    info['birth_place'] = birth_place
-    info['permanent address'] = permanent_adrr
+    info['BirthPlace'] = birth_place
+    info['PermanentAddress'] = permanent_adrr
 
     issue_date = get_issue_date(image)
-    info['issue_date'] = issue_date
+    info['IssueDate'] = issue_date
     return info
 
 def rotate_image(image, angle):
