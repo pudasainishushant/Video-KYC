@@ -349,9 +349,9 @@ def rotate_image(image, angle):
     return result
 
 if __name__ == '__main__':
-    image = cv2.imread("../test/back.jpeg", 1)
-    # image = rotate_image(image, 2)
+    image = cv2.imread("../test/back2.jpg", 1)
+    image = rotate_image(image, 2)
     print("Information Extracted:", get_info_back(image))
 
-    # cv2.imshow("image", image)
-    # cv2.waitKey()
+    cv2.imshow("image", image)
+    cv2.waitKey()

@@ -6,6 +6,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ocr.back_side_parse import get_info_back, get_string_similarity
+from ocr.front_side_parse import get_info_citizenship
 
 my_absolute_dirpath = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, my_absolute_dirpath + '/face')
@@ -52,13 +53,12 @@ async def upload_docs(side:str, file:  UploadFile = File(...)):
     image = cv2.imdecode(image, 1)
 
     if side == 'front':
-        pass
+        info = get_info_citizenship(image)
     elif side == 'back':
         info = get_info_back(image)
     return {
         "info" : info
     }
-
 
 @app.post("/faceSimilarity/")
 async def compare_face(files : List[UploadFile] = File(...)):

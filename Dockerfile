@@ -17,5 +17,9 @@ RUN apt-get -y update \
 
 COPY ./requirements.txt /app/
 RUN pip install --ignore-installed -r requirements.txt --no-cache-dir
+RUN sudo apt update
+RUN apt install uvicorn
+RUN sudo apt install tesseract-ocr
+RUN sudo apt install libtesseract-dev
 ADD ./app /app
 CMD uvicorn main:app --reload
