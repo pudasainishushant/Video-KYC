@@ -61,28 +61,38 @@ async def upload_docs(side:str, file:  UploadFile = File(...)):
     }
 
 @app.post("/faceSimilarity/")
-async def compare_face(files : List[UploadFile] = File(...)):
+async def compare_face(file1:  UploadFile = File(...), file2:  UploadFile = File(...)):
     status = False
     similarity = None
-    contents = [await file.read() for file in files]
-    file_names = [file.filename for file in files]
-    if len(contents) != 2:
-        raise HTTPException(status_code=400, detail="Must Pass Two Image. Single or more than two image not accepted!!")   
-    else:
-        images = [cv2.imdecode(np.array(bytearray(content), dtype=np.uint8), 1) for content in contents]
-        status0, face0 = get_face(images[0])
-        status1, face1 = get_face(images[1])
+    content1 = await file1.read()
+    content2 = await file2.read() 
+    image1 = np.array(bytearray(content1), dtype=np.uint8)
+    image1 = cv2.imdecode(image1, 1)
+    image2 = np.array(bytearray(content2), dtype=np.uint8)
+    image2 = cv2.imdecode(image2, 1)
 
-        if status0 and status1:
-            status = True
-            similarity = find_face_similarity.matching_prediction(face0, face1)
+    status0, face0 = get_face(image1)
+    status1, face1 = get_face(image2)
+
+    if status0 and status1:
+        status = True
+        similarity = find_face_similarity.matching_prediction(face0, face1)
+    else:
+        # if status0 == False and status1 == False:
+        #     similarity = {"image_name": [file_names[0], file_names[1]], "reason": [face0, face1]}
+        # elif status0 == False:
+        #     similarity = {"image_name": [file_names[0]], "reason": [face0]}
+        # elif status1 == False:
+        #     similarity = {"image_name": [file_names[1]], "reason": [face1]}
+        if not status0 and not status1:
+            return {"status": status, "similarity" : "both"} # Error on both images
+        elif not status0 and status1:
+            return {"status": status, "similarity" : "front"} # Error on front side
+        elif status0 and not status1:
+            return {"status": status, "similarity" : "back"} # Error on back side
         else:
-            if status0 == False and status1 == False:
-                similarity = {"image_name": [file_names[0], file_names[1]], "reason": [face0, face1]}
-            elif status0 == False:
-                similarity = {"image_name": [file_names[0]], "reason": [face0]}
-            elif status1 == False:
-                similarity = {"image_name": [file_names[1]], "reason": [face1]}
+            return {"status": status, "similarity" : None}
+
 
     return {
         "status": status,

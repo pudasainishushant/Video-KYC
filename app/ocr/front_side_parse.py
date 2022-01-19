@@ -483,14 +483,14 @@ def get_info_citizenship(image):
     # permanent_district = None
     # permanent_district = get_district(result)
     # permanent_ward = get_ward_no(result)
-    info = {'CitizenshipNumber': citizenship_number,
+    info = {'Citizenship number': citizenship_number,
                     'Name': name, 'Gender': gender, 
-                    'BirthDate': dob,
-                    'FatherName' : father_name,
-                    'MotherName' : mother_name,
-                    'BirthPlace': birth_district,
-                    'PermanentAddress': permanent_district,
-                    'BirthWardNumber': birth_ward, "PermanentWardNumber": permanent_ward}
+                    'Birth Date': dob,
+                    'Father name' : father_name,
+                    'Mother name' : mother_name,
+                    'Birth Place': birth_district,
+                    'Permanent Address': permanent_district,
+                    'Birth Ward Number': birth_ward, "Permanent Ward Number": permanent_ward}
     return info
 
 def most_frequent(List):

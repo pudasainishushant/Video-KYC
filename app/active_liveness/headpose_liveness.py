@@ -68,6 +68,8 @@ def get_head_pose(image):
                 hpose = "right"
             elif k1 / k2 <= 0.5:
                 hpose = "left"
+            else:
+                hpose = "center"
 
     return hpose
 
