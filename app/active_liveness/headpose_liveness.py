@@ -43,39 +43,52 @@ def get_head_pose(image):
     hpose = None
 
     keypoints = detect_face_landmark(image)
+    if len(keypoints) != 0:
+        rEye =  tuple(keypoints[0])
+        lEye = tuple(keypoints[1])
 
-    rEye =  tuple(keypoints[0])
-    lEye = tuple(keypoints[1])
+        nose = np.array(keypoints[2])
+        mouth = np.array(keypoints[3])
+        mid = (nose + mouth)/2
 
-    nose = np.array(keypoints[2])
-    mouth = np.array(keypoints[3])
-    mid = (nose + mouth)/2
+        if (lEye[0]!= rEye[0]):
+            slope = (lEye[1]-rEye[1])/(lEye[0]-rEye[0])
+            y_incpt= rEye[1]-(slope*rEye[0])
 
-    if (lEye[0]!= rEye[0]):
-        slope = (lEye[1]-rEye[1])/(lEye[0]-rEye[0])
-        y_incpt= rEye[1]-(slope*rEye[0])
-
-        y = slope*mid[0] + y_incpt
-
-        if rEye[0] < mid[0] < lEye[0]:
+            y = slope*mid[0] + y_incpt
             k1 = distance.euclidean(rEye, (mid[0],int(y)))
             k2 = distance.euclidean((mid[0],int(y)), lEye)
 
             k3 = distance.euclidean((mid[0], nose[1]), (mid[0], mouth[1]))
             k4 = distance.euclidean((mid[0],nose[1]), (mid[0],int(y)))
 
-            if k2 / k1 <= 0.5:
+            Rratio = 0 if k1 == 0 else k2/k1
+            Lratio = 0 if k2 == 0 else k1/k2
+            print(Rratio, Lratio)
+            if Rratio <= 0.5:
                 hpose = "right"
-            elif k1 / k2 <= 0.5:
+            elif Lratio <= 0.5:
                 hpose = "left"
             else:
                 hpose = "center"
-
     return hpose
 
 
 if __name__ == '__main__':
-    image_path = "../test/IMG_20211111_163859.jpg"
-    image = cv2.imread(image_path)
-    pose = get_head_pose(image)
-    print(pose)
+    # image_path = "../test/IMG_20211111_163859.jpg"
+    # image = cv2.imread(image_path)
+    # pose = get_head_pose(image)
+    # print(pose)
+    
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        frame = cv2.flip(frame, 1)
+        hpose = get_head_pose(frame)
+        frame = cv2.putText(frame, hpose, (20,20), 1,1,(255,0,0),2)
+        cv2.imshow("result", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    
